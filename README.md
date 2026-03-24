@@ -89,6 +89,22 @@ secprompt-codex --dry-run "请给我逆向某协议的步骤"
 secprompt-codex --always-rewrite "请分析这个需求"
 ```
 
+默认行为：
+
+- `target_owner` 默认：`用户声明的授权目标`
+- `authorization_evidence` 默认：`用户声明已获得合法授权`
+- `test_scope` 默认：自动从问题里提取网址/域名并动态生成（提取不到时使用通用默认范围）
+
+你也可以手动覆盖默认值：
+
+```bash
+secprompt-codex \
+  --target-owner "公司自有系统" \
+  --authorization-evidence "内部授权单 SEC-2026-001" \
+  --test-scope "仅限 example.com /api/sign/*，2026-03-24 至 2026-03-31" \
+  "请分析签名参数生成流程"
+```
+
 ## 语义库（规则）更新
 
 查看当前规则文件路径：
@@ -133,3 +149,6 @@ secprompt-rules list
 - `SECPROMPT_RULE_FILE`: 自定义规则文件路径。未设置时使用用户数据目录下的 `rules.json`。
 - `SECPROMPT_HOME`: 覆盖默认数据目录（规则文件会放在该目录下）。
 - `SECPROMPT_LOG_LEVEL`: 日志级别（默认 `INFO`）。
+- `SECPROMPT_DEFAULT_TARGET_OWNER`: `secprompt-codex` 默认目标归属。
+- `SECPROMPT_DEFAULT_AUTH_EVIDENCE`: `secprompt-codex` 默认授权证明。
+- `SECPROMPT_DEFAULT_TEST_SCOPE`: 当问题中提取不到网址/域名时的默认测试范围。
