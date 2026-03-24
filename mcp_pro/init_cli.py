@@ -9,7 +9,7 @@ from mcp_pro.rule_store import RuleStore
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Initialize user data for mcp-pro")
+    parser = argparse.ArgumentParser(description="Initialize user data for secprompt")
     parser.add_argument(
         "--reset-default",
         action="store_true",
@@ -39,4 +39,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

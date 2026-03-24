@@ -16,18 +16,10 @@ settings = load_settings()
 
 # For stdio transport, logs must go to stderr.
 logging.basicConfig(stream=sys.stderr, level=getattr(logging, settings.log_level, logging.INFO))
-logger = logging.getLogger("mcp-pro")
+logger = logging.getLogger("secprompt")
 
-mcp = FastMCP("semantic-rewriter-mcp", json_response=True)
+mcp = FastMCP("secprompt-mcp", json_response=True)
 store = RuleStore(settings.rule_file)
-
-
-def _auth(admin_token: str) -> bool:
-    # Local personal usage mode: if no token configured, allow updates.
-    if not settings.admin_token:
-        return True
-    return admin_token == settings.admin_token
-
 
 @mcp.tool()
 def health() -> dict[str, Any]:
@@ -38,7 +30,6 @@ def health() -> dict[str, Any]:
         "rule_file": str(settings.rule_file),
         "rules_count": len(data["rules"]),
         "updated_at": data["updated_at"],
-        "admin_token_configured": bool(settings.admin_token),
     }
 
 
@@ -55,11 +46,8 @@ def rule_upsert(
     category: str = "general",
     risk: str = "low",
     notes: str = "",
-    admin_token: str = "",
 ) -> dict[str, Any]:
     """Create or update one rule."""
-    if not _auth(admin_token):
-        return {"status": "forbidden", "reason": "invalid admin token"}
     action, rule = store.upsert_rule(
         {
             "term": term,
@@ -74,10 +62,8 @@ def rule_upsert(
 
 
 @mcp.tool()
-def rule_delete(term: str, admin_token: str = "") -> dict[str, Any]:
+def rule_delete(term: str) -> dict[str, Any]:
     """Delete one rule by term."""
-    if not _auth(admin_token):
-        return {"status": "forbidden", "reason": "invalid admin token"}
     deleted = store.delete_rule(term)
     if not deleted:
         return {"status": "not_found", "term": term}
@@ -86,10 +72,8 @@ def rule_delete(term: str, admin_token: str = "") -> dict[str, Any]:
 
 
 @mcp.tool()
-def rule_bulk_import(json_payload: str, mode: str = "merge", admin_token: str = "") -> dict[str, Any]:
+def rule_bulk_import(json_payload: str, mode: str = "merge") -> dict[str, Any]:
     """Bulk import rules from JSON string. json_payload format: {"rules":[...]}."""
-    if not _auth(admin_token):
-        return {"status": "forbidden", "reason": "invalid admin token"}
     try:
         parsed = json.loads(json_payload)
     except json.JSONDecodeError as exc:
@@ -162,4 +146,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

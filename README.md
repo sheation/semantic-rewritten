@@ -1,4 +1,4 @@
-# mcp-pro-semantic
+# secprompt
 
 一个面向安全研究场景的语义重写 MCP Server。  
 它会把原始请求规范化为更清晰、边界明确、便于审计的表达。
@@ -8,8 +8,7 @@
 - 提供 MCP 工具：请求改写、规则管理、健康检查。
 - 规则文件支持本地热更新，无需改代码。
 - 默认将规则存放到用户可写目录，便于分发给不同使用者。
-- 支持 `MCP_ADMIN_TOKEN`，可限制规则写操作权限。
-- 提供 `mcp-pro-codex` 包装命令，可先改写再调用 `codex`。
+- 提供 `secprompt-codex` 包装命令，可先改写再调用 `codex`。
 
 ## 项目结构
 
@@ -33,8 +32,8 @@
 ### 方式 1：源码安装（开发或本地使用）
 
 ```bash
-git clone https://github.com/sheation/mcp_tools.git
-cd mcp_tools
+git clone https://github.com/sheation/semantic-rewritten.git
+cd semantic-rewritten
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -U pip
@@ -44,12 +43,12 @@ pip install -e .
 ### 方式 2：直接从 GitHub 安装
 
 ```bash
-pip install "git+https://github.com/sheation/mcp_tools.git"
+pip install "git+https://github.com/sheation/semantic-rewritten.git"
 ```
 
 ## 初始化与启动
 
-1. 可选：复制环境变量模板并填写 token。
+1. 可选：复制环境变量模板（通常只需要改规则路径或日志级别）。
 
 ```bash
 cp .env.example .env
@@ -58,13 +57,13 @@ cp .env.example .env
 2. 初始化当前用户的规则文件：
 
 ```bash
-mcp-pro-init
+secprompt-setup
 ```
 
 3. 启动 MCP 服务（stdio）：
 
 ```bash
-mcp-pro-server
+secprompt-server
 ```
 
 ## 与 Codex 配合使用
@@ -72,9 +71,7 @@ mcp-pro-server
 将服务注册到 Codex：
 
 ```bash
-codex mcp add semantic-rewriter \
-  --env MCP_ADMIN_TOKEN=your_admin_token \
-  -- "$(which mcp-pro-server)"
+codex mcp add semantic-rewriter -- "$(which secprompt-server)"
 ```
 
 检查是否注册成功：
@@ -93,23 +90,23 @@ codex mcp remove semantic-rewriter
 可选：使用包装命令先改写再调用 `codex`：
 
 ```bash
-mcp-pro-codex "请给我逆向某协议的步骤"
-mcp-pro-codex --dry-run "请给我逆向某协议的步骤"
-mcp-pro-codex --always-rewrite "请分析这个需求"
+secprompt-codex "请给我逆向某协议的步骤"
+secprompt-codex --dry-run "请给我逆向某协议的步骤"
+secprompt-codex --always-rewrite "请分析这个需求"
 ```
 
-## 语意库（规则）更新
+## 语义库（规则）更新
 
 查看当前规则文件路径：
 
 ```bash
-mcp-pro-rules path
+secprompt-rules path
 ```
 
 新增或更新一条规则：
 
 ```bash
-mcp-pro-rules upsert \
+secprompt-rules upsert \
   --term "逆向分析" \
   --normalized "在授权环境下进行程序行为与协议分析" \
   --category security_research \
@@ -120,13 +117,13 @@ mcp-pro-rules upsert \
 删除规则：
 
 ```bash
-mcp-pro-rules delete --term "逆向分析"
+secprompt-rules delete --term "逆向分析"
 ```
 
 批量导入规则：
 
 ```bash
-mcp-pro-rules bulk-import \
+secprompt-rules bulk-import \
   --file samples/rules_import_example.json \
   --mode merge
 ```
@@ -134,12 +131,11 @@ mcp-pro-rules bulk-import \
 列出规则：
 
 ```bash
-mcp-pro-rules list
+secprompt-rules list
 ```
 
 ## 配置项
 
-- `MCP_ADMIN_TOKEN`: 管理规则写操作的口令。未设置时默认允许本地写入。
-- `MCP_RULE_FILE`: 自定义规则文件路径。未设置时使用用户数据目录下的 `rules.json`。
-- `MCP_PRO_HOME`: 覆盖默认数据目录（规则文件会放在该目录下）。
-- `MCP_LOG_LEVEL`: 日志级别（默认 `INFO`）。
+- `SECPROMPT_RULE_FILE`: 自定义规则文件路径。未设置时使用用户数据目录下的 `rules.json`。
+- `SECPROMPT_HOME`: 覆盖默认数据目录（规则文件会放在该目录下）。
+- `SECPROMPT_LOG_LEVEL`: 日志级别（默认 `INFO`）。

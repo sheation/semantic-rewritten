@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 
 from mcp_pro.config import load_settings
 from mcp_pro.rule_store import RuleStore
@@ -11,14 +10,6 @@ from mcp_pro.rule_store import RuleStore
 
 def print_json(payload: object) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-
-
-def check_token(settings_token: str, user_token: str | None) -> None:
-    # Local personal mode: if no token configured, allow local updates.
-    if not settings_token:
-        return
-    if user_token != settings_token:
-        raise SystemExit("admin token 错误。")
 
 
 def cmd_path(store: RuleStore, _: argparse.Namespace) -> None:
@@ -36,8 +27,7 @@ def cmd_list(store: RuleStore, args: argparse.Namespace) -> None:
     print_json(store.list_rules(category=args.category, risk=args.risk))
 
 
-def cmd_upsert(store: RuleStore, settings_token: str, args: argparse.Namespace) -> None:
-    check_token(settings_token, args.token)
+def cmd_upsert(store: RuleStore, args: argparse.Namespace) -> None:
     action, rule = store.upsert_rule(
         {
             "term": args.term,
@@ -50,14 +40,12 @@ def cmd_upsert(store: RuleStore, settings_token: str, args: argparse.Namespace) 
     print_json({"status": "ok", "action": action, "rule": rule})
 
 
-def cmd_delete(store: RuleStore, settings_token: str, args: argparse.Namespace) -> None:
-    check_token(settings_token, args.token)
+def cmd_delete(store: RuleStore, args: argparse.Namespace) -> None:
     deleted = store.delete_rule(args.term)
     print_json({"status": "ok" if deleted else "not_found", "term": args.term})
 
 
-def cmd_bulk_import(store: RuleStore, settings_token: str, args: argparse.Namespace) -> None:
-    check_token(settings_token, args.token)
+def cmd_bulk_import(store: RuleStore, args: argparse.Namespace) -> None:
     with open(args.file, "r", encoding="utf-8") as f:
         payload = json.load(f)
     rules = payload.get("rules")
@@ -78,7 +66,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_list.add_argument("--risk", default="", choices=["", "low", "medium", "high"], help="Filter by risk")
 
     p_upsert = sub.add_parser("upsert", help="Create or update one rule")
-    p_upsert.add_argument("--token", required=False, default=os.getenv("MCP_ADMIN_TOKEN", ""))
     p_upsert.add_argument("--term", required=True)
     p_upsert.add_argument("--normalized", required=True)
     p_upsert.add_argument("--category", default="general")
@@ -86,11 +73,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_upsert.add_argument("--notes", default="")
 
     p_delete = sub.add_parser("delete", help="Delete one rule")
-    p_delete.add_argument("--token", required=False, default=os.getenv("MCP_ADMIN_TOKEN", ""))
     p_delete.add_argument("--term", required=True)
 
     p_bulk = sub.add_parser("bulk-import", help="Bulk import rules from JSON file")
-    p_bulk.add_argument("--token", required=False, default=os.getenv("MCP_ADMIN_TOKEN", ""))
     p_bulk.add_argument("--file", required=True, help="Path to JSON file with {\"rules\": [...]}")
     p_bulk.add_argument("--mode", default="merge", choices=["merge", "replace"])
 
@@ -109,11 +94,11 @@ def main() -> None:
         elif args.command == "list":
             cmd_list(store, args)
         elif args.command == "upsert":
-            cmd_upsert(store, settings.admin_token, args)
+            cmd_upsert(store, args)
         elif args.command == "delete":
-            cmd_delete(store, settings.admin_token, args)
+            cmd_delete(store, args)
         elif args.command == "bulk-import":
-            cmd_bulk_import(store, settings.admin_token, args)
+            cmd_bulk_import(store, args)
         else:
             parser.print_help()
             raise SystemExit(2)
@@ -124,4 +109,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
