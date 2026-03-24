@@ -1,0 +1,26 @@
+[project]
+name = "mcp-pro-semantic"
+version = "0.1.0"
+description = "Compliant semantic rewrite MCP server for security-research prompts"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "mcp[cli]>=1.2.0",
+  "platformdirs>=4.2.0",
+]
+
+[project.scripts]
+mcp-pro-server = "mcp_pro.server_app:main"
+mcp-pro-rules = "mcp_pro.rules_cli:main"
+mcp-pro-codex = "mcp_pro.codex_rewrite_cli:main"
+mcp-pro-init = "mcp_pro.init_cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["mcp_pro*"]
+
+[tool.uv]
+dev-dependencies = []

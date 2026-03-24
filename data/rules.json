@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "updated_at": "2026-03-24T03:30:01.168810+00:00",
+  "rules": [
+    {
+      "term": "逆向",
+      "normalized": "在授权环境下进行二进制行为分析",
+      "category": "security_research",
+      "risk": "medium",
+      "notes": "强调合法授权和分析导向"
+    },
+    {
+      "term": "破解",
+      "normalized": "在授权范围内进行安全性评估",
+      "category": "security_research",
+      "risk": "high",
+      "notes": "高风险词，需人工复核后再继续"
+    }
+  ]
+}

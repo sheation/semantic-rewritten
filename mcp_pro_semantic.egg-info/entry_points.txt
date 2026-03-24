@@ -1,0 +1,5 @@
+[console_scripts]
+mcp-pro-codex = mcp_pro.codex_rewrite_cli:main
+mcp-pro-init = mcp_pro.init_cli:main
+mcp-pro-rules = mcp_pro.rules_cli:main
+mcp-pro-server = mcp_pro.server_app:main

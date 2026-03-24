@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+mcp_pro/__init__.py
+mcp_pro/codex_rewrite_cli.py
+mcp_pro/config.py
+mcp_pro/init_cli.py
+mcp_pro/paths.py
+mcp_pro/rewriter.py
+mcp_pro/rule_store.py
+mcp_pro/rules_cli.py
+mcp_pro/server_app.py
+mcp_pro_semantic.egg-info/PKG-INFO
+mcp_pro_semantic.egg-info/SOURCES.txt
+mcp_pro_semantic.egg-info/dependency_links.txt
+mcp_pro_semantic.egg-info/entry_points.txt
+mcp_pro_semantic.egg-info/requires.txt
+mcp_pro_semantic.egg-info/top_level.txt

@@ -1,0 +1,18 @@
+{
+  "rules": [
+    {
+      "term": "固件逆向",
+      "normalized": "在授权实验环境中进行固件行为与协议分析",
+      "category": "iot_security",
+      "risk": "medium",
+      "notes": "适用于 IoT 设备调试"
+    },
+    {
+      "term": "协议破解",
+      "normalized": "在授权范围内进行协议安全性验证与兼容性测试",
+      "category": "protocol_security",
+      "risk": "high",
+      "notes": "仅用于防御性验证"
+    }
+  ]
+}
