@@ -1,2 +1,0 @@
-mcp[cli]>=1.2.0
-platformdirs>=4.2.0

@@ -1,108 +1,112 @@
-# mcp_pro: 可分发、可热更新词库的语义优化 MCP（Python）
+# mcp-pro-semantic
 
-这个项目是一个合规导向的语义重写 MCP Server。  
-目标：把安全研究类请求规范化为清晰、可审计、边界明确的表达。
+一个面向安全研究场景的语义重写 MCP Server。  
+它会把原始请求规范化为更清晰、边界明确、便于审计的表达。
 
-## 1. 你关心的能力
+## 功能概览
 
-- 你的 MCP 可以给别人安装使用。
-- 每个安装者都可以随时更新自己的关键词词库。
-- 词库默认使用“用户自己的可写目录”，不需要改源码。
-- 也支持你设定 `MCP_ADMIN_TOKEN` 来限制词库修改权限。
+- 提供 MCP 工具：请求改写、规则管理、健康检查。
+- 规则文件支持本地热更新，无需改代码。
+- 默认将规则存放到用户可写目录，便于分发给不同使用者。
+- 支持 `MCP_ADMIN_TOKEN`，可限制规则写操作权限。
+- 提供 `mcp-pro-codex` 包装命令，可先改写再调用 `codex`。
 
-## 2. 项目结构
+## 项目结构
 
 ```text
-mcp_pro/
-├─ server.py                         # 兼容入口（调用 mcp_pro.server_app）
-├─ pyproject.toml
-├─ .env.example
-├─ data/
-│  └─ rules.json                     # 仓库内示例词库
+.
 ├─ mcp_pro/
-│  ├─ config.py
-│  ├─ paths.py
-│  ├─ rule_store.py
-│  ├─ rewriter.py
-│  ├─ server_app.py                  # 真正服务入口
-│  ├─ rules_cli.py                   # 词库管理 CLI
-│  ├─ codex_rewrite_cli.py           # 先改写后调用 codex 的包装 CLI
-│  └─ init_cli.py                    # 初始化用户数据
-├─ scripts/
-│  ├─ rules_cli.py                   # 开发期兼容脚本
-│  └─ codex_rewrite.py               # 开发期兼容脚本
-└─ samples/
-   └─ rules_import_example.json
+│  ├─ server_app.py       # MCP 服务入口
+│  ├─ rewriter.py         # 改写逻辑
+│  ├─ rule_store.py       # 规则读写与校验
+│  ├─ rules_cli.py        # 规则管理 CLI
+│  ├─ codex_rewrite_cli.py
+│  └─ init_cli.py
+├─ data/rules.json        # 示例规则
+├─ samples/rules_import_example.json
+├─ pyproject.toml
+└─ server.py              # 兼容入口
 ```
 
-## 3. 安装方式
+## 安装
 
-### 3.1 开发/本地项目方式
+### 方式 1：源码安装（开发或本地使用）
 
 ```bash
-cd /Users/sheation/Pythona_project/mcp_pro
+git clone https://github.com/sheation/mcp_tools.git
+cd mcp_tools
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -U pip
 pip install -e .
 ```
 
-初始化用户词库：
+### 方式 2：直接从 GitHub 安装
+
+```bash
+pip install "git+https://github.com/sheation/mcp_tools.git"
+```
+
+## 初始化与启动
+
+1. 可选：复制环境变量模板并填写 token。
+
+```bash
+cp .env.example .env
+```
+
+2. 初始化当前用户的规则文件：
 
 ```bash
 mcp-pro-init
 ```
 
-### 3.2 给别人安装（推荐）
-
-你可以把项目放到 Git 仓库，让别人直接安装：
-
-```bash
-pip install "git+https://你的仓库地址.git"
-mcp-pro-init
-```
-
-如果你发布到 PyPI，别人可直接：
-
-```bash
-pip install mcp-pro-semantic
-mcp-pro-init
-```
-
-## 4. 默认词库位置（关键）
-
-当 `MCP_RULE_FILE` 未设置时，程序会自动使用当前用户的数据目录（`platformdirs`）。  
-这意味着：每个安装者有自己的 `rules.json`，可以独立更新关键词。
-
-查看当前生效路径：
-
-```bash
-mcp-pro-rules path
-```
-
-如果你想指定路径（例如团队共享路径），设置环境变量：
-
-```bash
-export MCP_RULE_FILE=/your/path/rules.json
-```
-
-## 5. 启动 MCP 服务
+3. 启动 MCP 服务（stdio）：
 
 ```bash
 mcp-pro-server
 ```
 
-兼容旧方式（项目内）：
+## 与 Codex 配合使用
+
+将服务注册到 Codex：
 
 ```bash
-python /Users/sheation/Pythona_project/mcp_pro/server.py
+codex mcp add semantic-rewriter \
+  --env MCP_ADMIN_TOKEN=your_admin_token \
+  -- "$(which mcp-pro-server)"
 ```
 
-## 6. 词库更新（别人安装后也可随时更新）
+检查是否注册成功：
 
-### 6.1 本地 CLI 更新
+```bash
+codex mcp list
+codex mcp get semantic-rewriter --json
+```
 
-新增/更新：
+删除注册：
+
+```bash
+codex mcp remove semantic-rewriter
+```
+
+可选：使用包装命令先改写再调用 `codex`：
+
+```bash
+mcp-pro-codex "请给我逆向某协议的步骤"
+mcp-pro-codex --dry-run "请给我逆向某协议的步骤"
+mcp-pro-codex --always-rewrite "请分析这个需求"
+```
+
+## 语意库（规则）更新
+
+查看当前规则文件路径：
+
+```bash
+mcp-pro-rules path
+```
+
+新增或更新一条规则：
 
 ```bash
 mcp-pro-rules upsert \
@@ -113,104 +117,39 @@ mcp-pro-rules upsert \
   --notes "新增术语"
 ```
 
-删除：
+删除规则：
 
 ```bash
 mcp-pro-rules delete --term "逆向分析"
 ```
 
-批量导入：
+批量导入规则：
 
 ```bash
 mcp-pro-rules bulk-import \
-  --file /path/to/rules_import.json \
+  --file samples/rules_import_example.json \
   --mode merge
 ```
 
-查看：
+列出规则：
 
 ```bash
 mcp-pro-rules list
 ```
 
-### 6.2 通过 MCP 工具更新
+## 配置项
 
-服务工具包含：
+- `MCP_ADMIN_TOKEN`: 管理规则写操作的口令。未设置时默认允许本地写入。
+- `MCP_RULE_FILE`: 自定义规则文件路径。未设置时使用用户数据目录下的 `rules.json`。
+- `MCP_PRO_HOME`: 覆盖默认数据目录（规则文件会放在该目录下）。
+- `MCP_LOG_LEVEL`: 日志级别（默认 `INFO`）。
 
-- `rule_upsert`
-- `rule_delete`
-- `rule_bulk_import`
-- `rule_list`
+## 安全说明
 
-如果配置了 `MCP_ADMIN_TOKEN`，调用这些写操作时需传 `admin_token`。  
-如果没配置 token（个人本地模式），允许直接修改。
+- 不要把真实 token 写入公开文档或提交到仓库。
+- `.env` 已被 `.gitignore` 忽略，建议仅保留 `.env.example` 作为模板。
+- 如果 token 曾被公开，请立即在服务端轮换该 token。
 
-## 7. 接入 Codex CLI
+## License
 
-注册到 Codex（示例）：
-
-```bash
-codex mcp add semantic-rewriter \
-  --env MCP_ADMIN_TOKEN=你的token \
-  -- "$(which mcp-pro-server)"
-```
-
-查看：
-
-```bash
-codex mcp list
-codex mcp get semantic-rewriter --json
-```
-
-删除：
-
-```bash
-codex mcp remove semantic-rewriter
-```
-
-说明：部分 Codex CLI 版本把 MCP 配置保存在内部状态，不一定写入 `~/.codex/config.toml`，以 `codex mcp list/get` 为准。
-
-## 8. 强制“先改写再发给模型”
-
-Codex 中 MCP 默认是“工具调用”，不是强制前置。  
-如果你要强制先过词库，用包装命令：
-
-```bash
-mcp-pro-codex "请给我逆向某协议的步骤"
-```
-
-只预览改写，不发送：
-
-```bash
-mcp-pro-codex --dry-run "请给我逆向某协议的步骤"
-```
-
-默认行为：
-
-- 命中关键词 -> 改写后发送
-- 未命中关键词 -> 原文发送
-
-强制每次都改写：
-
-```bash
-mcp-pro-codex --always-rewrite "请分析这个需求"
-```
-
-## 9. 你要发布给别人的标准流程
-
-1. 维护代码和默认词库模板。  
-2. 打版本（例如 `0.1.1`）。  
-3. 发布到 Git/PyPI。  
-4. 用户安装后运行 `mcp-pro-init`。  
-5. 用户用 `mcp-pro-rules upsert` 随时更新自己的关键词。  
-
-## 10. 常见问题
-
-1. 为什么别人更新不了词库？  
-通常是 `MCP_RULE_FILE` 指向了无写权限路径，或设置了 token 但没传 `--token`/`admin_token`。
-
-2. 能不能让所有人共用同一份词库？  
-可以，把所有实例的 `MCP_RULE_FILE` 指向同一路径（或统一分发导入文件）。但共享文件要考虑并发与权限。
-
-3. 词库更新后是否要重启服务？  
-不需要。本项目每次调用都会读取最新词库。
+可按需要补充（例如 MIT）。
