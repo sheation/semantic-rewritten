@@ -9,6 +9,7 @@ import sys
 from urllib.parse import urlparse
 
 from mcp_pro.config import load_settings
+from mcp_pro.platform_router import build_platform_reverse_request, resolve_platform
 from mcp_pro.rewriter import build_compliant_prompt
 from mcp_pro.rule_store import RuleStore
 
@@ -22,6 +23,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--purpose", default="授权安全研究", help="Research purpose for compliant prompt")
     parser.add_argument("--scope", default="授权测试环境", help="Additional scope notes")
+    parser.add_argument(
+        "--platform",
+        default="auto",
+        choices=["auto", "web", "ios", "android", "hybrid", "generic"],
+        help="Target platform routing. auto tries to infer from prompt.",
+    )
+    parser.add_argument("--focus-param", default="", help="Optional parameter name to emphasize in reverse testing")
     parser.add_argument("--target-owner", default="", help="Target ownership, e.g. 自有系统 or 授权方名称")
     parser.add_argument("--authorization-evidence", default="", help="Authorization evidence, e.g. 书面授权单号")
     parser.add_argument("--test-scope", default="", help="Strict testing scope, e.g. 域名/接口/时间窗口")
@@ -92,6 +100,8 @@ def _resolve_defaults(args: argparse.Namespace, raw_prompt: str) -> tuple[str, s
 def run() -> int:
     args = parse_args()
     raw_prompt = " ".join(args.prompt).strip()
+    platform = resolve_platform(args.platform, raw_prompt)
+    routed_prompt = build_platform_reverse_request(raw_prompt, platform, args.focus_param)
     target_owner, authorization_evidence, test_scope = _resolve_defaults(args, raw_prompt)
 
     settings = load_settings()
@@ -99,7 +109,7 @@ def run() -> int:
     rules = store.load()["rules"]
 
     decision = build_compliant_prompt(
-        raw_request=raw_prompt,
+        raw_request=routed_prompt,
         purpose=args.purpose,
         authorized=args.authorized,
         scope=args.scope,
@@ -115,7 +125,12 @@ def run() -> int:
         print(f"[blocked] {decision.reason}", file=sys.stderr)
         return 2
 
-    should_rewrite = args.always_rewrite or bool(decision.matched_terms)
+    should_rewrite = (
+        args.always_rewrite
+        or bool(decision.matched_terms)
+        or platform != "generic"
+        or bool(args.focus_param.strip())
+    )
     outgoing_prompt = decision.rewritten_prompt if should_rewrite else raw_prompt
 
     if args.dry_run:

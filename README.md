@@ -89,6 +89,18 @@ secprompt-codex --dry-run "请给我逆向某协议的步骤"
 secprompt-codex --always-rewrite "请分析这个需求"
 ```
 
+分平台逆向测试（推荐）：
+
+```bash
+secprompt-codex --platform web --focus-param a_bogus "分析 completion 接口参数生成链路"
+secprompt-codex --platform ios --focus-param sign_x "分析 iOS 客户端参数生成链路"
+secprompt-codex --platform android --focus-param sign_x "分析 Android 客户端参数生成链路"
+secprompt-codex --platform hybrid --focus-param token_y "分析 H5 + Native 跨层参数链路"
+```
+
+说明：`--platform auto`（默认）会从输入自动识别平台。  
+平台模板会按 `Recon -> Communication -> Static -> Dynamic -> Reconstruction` 的阶段输出，并强制每阶段包含证据项。
+
 默认行为：
 
 - `target_owner` 默认：`用户声明的授权目标`

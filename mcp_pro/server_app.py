@@ -8,6 +8,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from mcp_pro.config import load_settings
+from mcp_pro.platform_router import build_platform_reverse_request, resolve_platform
 from mcp_pro.rewriter import build_compliant_prompt
 from mcp_pro.rule_store import RuleStore
 
@@ -119,6 +120,8 @@ def rewrite_request(
     target_owner: str,
     authorization_evidence: str,
     test_scope: str,
+    platform: str = "auto",
+    focus_param: str = "",
     output_format: str = "步骤清单",
     language: str = "zh-CN",
 ) -> dict[str, Any]:
@@ -126,8 +129,10 @@ def rewrite_request(
     Rewrite a request into a compliant and clear security-research request.
     """
     data = store.load()
+    routed_platform = resolve_platform(platform, raw_request)
+    routed_request = build_platform_reverse_request(raw_request, routed_platform, focus_param)
     decision = build_compliant_prompt(
-        raw_request=raw_request,
+        raw_request=routed_request,
         purpose=purpose,
         authorized=authorized,
         scope=scope,
@@ -144,6 +149,7 @@ def rewrite_request(
 
     return {
         "status": "ok",
+        "platform": routed_platform,
         "matched_terms": decision.matched_terms,
         "rewritten_prompt": decision.rewritten_prompt,
     }
