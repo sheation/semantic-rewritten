@@ -15,7 +15,10 @@ def parse_args() -> argparse.Namespace:
         description="Preprocess prompt using local semantic rules, then send to codex."
     )
     parser.add_argument("--purpose", default="授权安全研究", help="Research purpose for compliant prompt")
-    parser.add_argument("--scope", default="授权测试环境", help="Authorized scope")
+    parser.add_argument("--scope", default="授权测试环境", help="Additional scope notes")
+    parser.add_argument("--target-owner", required=True, help="Target ownership, e.g. 自有系统 or 授权方名称")
+    parser.add_argument("--authorization-evidence", required=True, help="Authorization evidence, e.g. 书面授权单号")
+    parser.add_argument("--test-scope", required=True, help="Strict testing scope, e.g. 域名/接口/时间窗口")
     parser.add_argument(
         "--authorized",
         action="store_true",
@@ -57,6 +60,9 @@ def run() -> int:
         purpose=args.purpose,
         authorized=args.authorized,
         scope=args.scope,
+        target_owner=args.target_owner,
+        authorization_evidence=args.authorization_evidence,
+        test_scope=args.test_scope,
         rules=rules,
         output_format=args.output_format,
         language=args.language,
@@ -84,4 +90,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

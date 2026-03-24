@@ -48,19 +48,13 @@ pip install "git+https://github.com/sheation/semantic-rewritten.git"
 
 ## 初始化与启动
 
-1. 可选：复制环境变量模板（通常只需要改规则路径或日志级别）。
-
-```bash
-cp .env.example .env
-```
-
-2. 初始化当前用户的规则文件：
+1. 初始化当前用户的规则文件：
 
 ```bash
 secprompt-setup
 ```
 
-3. 启动 MCP 服务（stdio）：
+2. 启动 MCP 服务（stdio）：
 
 ```bash
 secprompt-server

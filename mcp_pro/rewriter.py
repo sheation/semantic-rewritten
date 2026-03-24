@@ -50,10 +50,28 @@ def build_compliant_prompt(
     purpose: str,
     authorized: bool,
     scope: str,
+    target_owner: str,
+    authorization_evidence: str,
+    test_scope: str,
     rules: list[dict[str, Any]],
     output_format: str = "步骤清单",
     language: str = "zh-CN",
 ) -> RewriteDecision:
+    missing_fields: list[str] = []
+    if not target_owner.strip():
+        missing_fields.append("target_owner")
+    if not authorization_evidence.strip():
+        missing_fields.append("authorization_evidence")
+    if not test_scope.strip():
+        missing_fields.append("test_scope")
+    if missing_fields:
+        return RewriteDecision(
+            status="blocked",
+            reason=f"缺少必要字段: {', '.join(missing_fields)}。必须提供目标归属、授权证明、测试范围。",
+            rewritten_prompt="",
+            matched_terms=[],
+        )
+
     if not authorized:
         return RewriteDecision(
             status="blocked",
@@ -75,7 +93,10 @@ def build_compliant_prompt(
         "你是安全研究助手，请仅在合法授权范围内提供帮助。\n"
         f"语言: {language}\n"
         f"研究目的: {purpose}\n"
-        f"测试范围: {scope}\n"
+        f"目标归属: {target_owner}\n"
+        f"授权证明: {authorization_evidence}\n"
+        f"测试范围: {test_scope}\n"
+        f"附加范围说明: {scope}\n"
         f"用户原始需求: {raw_request}\n"
         f"语义规范化后需求: {rewritten_text}\n"
         "输出边界: 只提供防御性分析、审计流程、修复建议、风险评估，"
@@ -88,4 +109,3 @@ def build_compliant_prompt(
         rewritten_prompt=prompt,
         matched_terms=matched_terms,
     )
-

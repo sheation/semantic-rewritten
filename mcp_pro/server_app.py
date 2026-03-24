@@ -97,6 +97,9 @@ def rule_test(raw_text: str) -> dict[str, Any]:
         purpose="测试规则命中情况",
         authorized=True,
         scope="本地测试",
+        target_owner="本地测试目标",
+        authorization_evidence="本地开发者自测",
+        test_scope="仅限本地测试文本",
         rules=data["rules"],
     )
     return {
@@ -113,6 +116,9 @@ def rewrite_request(
     purpose: str,
     authorized: bool,
     scope: str,
+    target_owner: str,
+    authorization_evidence: str,
+    test_scope: str,
     output_format: str = "步骤清单",
     language: str = "zh-CN",
 ) -> dict[str, Any]:
@@ -125,6 +131,9 @@ def rewrite_request(
         purpose=purpose,
         authorized=authorized,
         scope=scope,
+        target_owner=target_owner,
+        authorization_evidence=authorization_evidence,
+        test_scope=test_scope,
         rules=data["rules"],
         output_format=output_format,
         language=language,
