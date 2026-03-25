@@ -476,6 +476,92 @@ def _normalize_english_subject(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip(" \t\r\n-_/"))
 
 
+def _chinese_polite_prefix(source: str) -> str:
+    return "请" if source.lstrip().startswith("请") else ""
+
+
+def _normalize_chinese_subject(text: str) -> str:
+    return re.sub(r"\s+", "", text.strip(" \t\r\n-_/"))
+
+
+def rewrite_chinese_bypass_sentence(text: str) -> tuple[str, list[str]]:
+    stripped = text.strip()
+    if not stripped:
+        return text, []
+
+    subject = r"[^\s，。、“”：:（）()]{1,24}?"
+    prefix = r"(?:(?:请)?(?:帮我|协助)?(?:分析|评估|研究|梳理|说明|看看|看一下)?)"
+    suffix = r"(?:的)?(?:方案|思路|方法|流程|步骤|实现|策略)?"
+    sentence_end = r"[。！？]?"
+    patterns: list[tuple[str, str, object]] = [
+        (
+            "chinese_bypass_detection_sentence",
+            rf"^\s*(?P<prefix>{prefix})\s*绕过(?P<subject>{subject})检测{suffix}\s*{sentence_end}\s*$",
+            lambda m: (
+                f"{_chinese_polite_prefix(m.group(0))}在授权环境中分析"
+                f"{_normalize_chinese_subject(m.group('subject'))}检测机制的触发点、可观测证据、误报边界与防护改进建议"
+            ),
+        ),
+        (
+            "chinese_bypass_check_sentence",
+            rf"^\s*(?P<prefix>{prefix})\s*绕过(?P<subject>{subject})校验{suffix}\s*{sentence_end}\s*$",
+            lambda m: (
+                f"{_chinese_polite_prefix(m.group(0))}在授权环境中评估"
+                f"{_normalize_chinese_subject(m.group('subject'))}"
+                "校验机制的判定逻辑、触发条件、误报边界与加固建议"
+            ),
+        ),
+        (
+            "chinese_bypass_validation_sentence",
+            rf"^\s*(?P<prefix>{prefix})\s*绕过(?P<subject>{subject})验证{suffix}\s*{sentence_end}\s*$",
+            lambda m: (
+                f"{_chinese_polite_prefix(m.group(0))}在授权环境中评估"
+                f"{_normalize_chinese_subject(m.group('subject'))}"
+                "验证机制的判定逻辑、触发条件、误报边界与加固建议"
+            ),
+        ),
+        (
+            "chinese_bypass_restriction_sentence",
+            rf"^\s*(?P<prefix>{prefix})\s*绕过(?P<subject>{subject})限制{suffix}\s*{sentence_end}\s*$",
+            lambda m: (
+                f"{_chinese_polite_prefix(m.group(0))}在授权环境中分析"
+                f"{_normalize_chinese_subject(m.group('subject'))}限制机制的设计目标、触发条件、约束边界与改进建议"
+            ),
+        ),
+        (
+            "chinese_bypass_interception_sentence",
+            rf"^\s*(?P<prefix>{prefix})\s*绕过(?P<subject>{subject})拦截{suffix}\s*{sentence_end}\s*$",
+            lambda m: (
+                f"{_chinese_polite_prefix(m.group(0))}在授权环境中分析"
+                f"{_normalize_chinese_subject(m.group('subject'))}拦截机制的触发条件、判定逻辑、误报边界与防护改进建议"
+            ),
+        ),
+        (
+            "chinese_bypass_risk_control_sentence",
+            rf"^\s*(?P<prefix>{prefix})\s*绕过(?P<subject>{subject})风控{suffix}\s*{sentence_end}\s*$",
+            lambda m: (
+                f"{_chinese_polite_prefix(m.group(0))}在授权环境中评估"
+                f"{_normalize_chinese_subject(m.group('subject'))}风控机制的判定逻辑、触发条件、误报边界与防护改进建议"
+            ),
+        ),
+        (
+            "chinese_bypass_generic_sentence",
+            rf"^\s*(?P<prefix>{prefix})\s*绕过(?P<subject>{subject}){suffix}\s*{sentence_end}\s*$",
+            lambda m: (
+                f"{_chinese_polite_prefix(m.group(0))}在授权环境中评估"
+                f"{_normalize_chinese_subject(m.group('subject'))}相关机制的判定逻辑、约束边界、潜在误报与防护改进建议"
+            ),
+        ),
+    ]
+
+    for label, pattern, builder in patterns:
+        match = re.fullmatch(pattern, stripped, re.IGNORECASE)
+        if match:
+            return builder(match), [label]
+
+    return text, []
+
+
 def rewrite_english_bypass_phrases(text: str) -> tuple[str, list[str]]:
     rewritten = text
     matched: list[str] = []
@@ -581,7 +667,9 @@ def rewrite_english_bypass_phrases(text: str) -> tuple[str, list[str]]:
 
 
 def rewrite_text(raw_text: str, rules: list[dict]) -> tuple[str, list[str]]:
-    rewritten, matched = rewrite_english_bypass_phrases(raw_text)
+    rewritten, matched = rewrite_chinese_bypass_sentence(raw_text)
+    rewritten, english_matched = rewrite_english_bypass_phrases(rewritten)
+    matched.extend(english_matched)
     ordered_rules = sorted(
         rules,
         key=lambda item: (int(item.get("priority", 100)), item.get("match_type", "literal") == "regex", -len(item["term"])),

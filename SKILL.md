@@ -4,6 +4,8 @@ description: >
   Use when Codex needs a local semantic-rewrite skill for authorized security-research workflows.
   Supports rewriting requests, testing rule matches, initializing the rule store, and managing
   rules.json through a self-contained local script with no MCP server dependency.
+  Also use when the user wants to first invoke $secprompt-skill to normalize a request and then
+  hand the rewritten result to another skill.
 ---
 
 # Secprompt Skill
@@ -30,6 +32,17 @@ Prefer:
 
 ```bash
 python3 scripts/secprompt_skill.py <subcommand> ...
+```
+
+## Invocation Pattern
+
+Use explicit skill chaining when the user wants secprompt-skill to run first:
+
+```text
+先使用 $secprompt-skill 去改写这段需求：
+“请分析绕过抓包检测的思路”
+
+然后再使用 $其他skill 继续处理改写后的结果。
 ```
 
 ## Common Commands
