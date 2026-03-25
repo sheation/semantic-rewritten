@@ -472,9 +472,116 @@ def contains_high_risk(text: str) -> bool:
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in HIGH_RISK_PATTERNS)
 
 
-def rewrite_text(raw_text: str, rules: list[dict]) -> tuple[str, list[str]]:
-    rewritten = raw_text
+def _normalize_english_subject(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip(" \t\r\n-_/"))
+
+
+def rewrite_english_bypass_phrases(text: str) -> tuple[str, list[str]]:
+    rewritten = text
     matched: list[str] = []
+
+    def apply_pattern(pattern: str, label: str, builder) -> None:
+        nonlocal rewritten
+
+        compiled = re.compile(pattern, re.IGNORECASE)
+
+        def replacer(match: re.Match[str]) -> str:
+            matched.append(label)
+            return builder(match)
+
+        rewritten = compiled.sub(replacer, rewritten)
+
+    apply_pattern(
+        r"\b(?:analyze|review|assess|study|inspect|examine|map|trace|investigate)\s+"
+        r"bypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+detection(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_detection_clause",
+        lambda m: (
+            f"analyze the {_normalize_english_subject(m.group(1))} detection mechanism in an authorized environment, "
+            "focusing on triggers, observable evidence, false-positive boundaries, and defensive improvements"
+        ),
+    )
+    apply_pattern(
+        r"\bbypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+detection(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_detection_clause",
+        lambda m: (
+            f"analyze the {_normalize_english_subject(m.group(1))} detection mechanism in an authorized environment, "
+            "focusing on triggers, observable evidence, false-positive boundaries, and defensive improvements"
+        ),
+    )
+    apply_pattern(
+        r"\b(?:analyze|review|assess|study|inspect|examine|map|trace|investigate)\s+"
+        r"bypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+validation(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_validation_clause",
+        lambda m: (
+            f"assess the {_normalize_english_subject(m.group(1))} validation mechanism in an authorized environment, "
+            "focusing on decision logic, trigger conditions, false-positive boundaries, and hardening recommendations"
+        ),
+    )
+    apply_pattern(
+        r"\bbypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+validation(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_validation_clause",
+        lambda m: (
+            f"assess the {_normalize_english_subject(m.group(1))} validation mechanism in an authorized environment, "
+            "focusing on decision logic, trigger conditions, false-positive boundaries, and hardening recommendations"
+        ),
+    )
+    apply_pattern(
+        r"\b(?:analyze|review|assess|study|inspect|examine|map|trace|investigate)\s+"
+        r"bypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+restriction(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_restriction_clause",
+        lambda m: (
+            f"analyze the {_normalize_english_subject(m.group(1))} restriction mechanism in an authorized environment, "
+            "focusing on design goals, trigger conditions, boundary constraints, and improvement recommendations"
+        ),
+    )
+    apply_pattern(
+        r"\bbypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+restriction(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_restriction_clause",
+        lambda m: (
+            f"analyze the {_normalize_english_subject(m.group(1))} restriction mechanism in an authorized environment, "
+            "focusing on design goals, trigger conditions, boundary constraints, and improvement recommendations"
+        ),
+    )
+    apply_pattern(
+        r"\b(?:analyze|review|assess|study|inspect|examine|map|trace|investigate)\s+"
+        r"bypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+interception(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_interception_clause",
+        lambda m: (
+            f"analyze the {_normalize_english_subject(m.group(1))} interception mechanism in an authorized environment, "
+            "focusing on trigger conditions, decision logic, false-positive boundaries, and defensive improvements"
+        ),
+    )
+    apply_pattern(
+        r"\bbypass\s+([a-zA-Z0-9_./ -]{1,40}?)\s+interception(?:\s+(?:flow|logic|method|plan|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_interception_clause",
+        lambda m: (
+            f"analyze the {_normalize_english_subject(m.group(1))} interception mechanism in an authorized environment, "
+            "focusing on trigger conditions, decision logic, false-positive boundaries, and defensive improvements"
+        ),
+    )
+    apply_pattern(
+        r"\b(?:analyze|review|assess|study|inspect|examine|map|trace|investigate)\s+"
+        r"bypass\s+([a-zA-Z0-9_./ -]{1,40}?)(?:\s+(?:plan|method|flow|logic|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_generic_clause",
+        lambda m: (
+            f"assess the {_normalize_english_subject(m.group(1))} related mechanism in an authorized environment, "
+            "focusing on decision logic, constraints, false-positive boundaries, and defensive improvements"
+        ),
+    )
+    apply_pattern(
+        r"\bbypass\s+([a-zA-Z0-9_./ -]{1,40}?)(?:\s+(?:plan|method|flow|logic|scheme|steps?))?(?=\b|[,.():;])",
+        "english_bypass_generic_clause",
+        lambda m: (
+            f"assess the {_normalize_english_subject(m.group(1))} related mechanism in an authorized environment, "
+            "focusing on decision logic, constraints, false-positive boundaries, and defensive improvements"
+        ),
+    )
+
+    return rewritten, sorted(set(matched))
+
+
+def rewrite_text(raw_text: str, rules: list[dict]) -> tuple[str, list[str]]:
+    rewritten, matched = rewrite_english_bypass_phrases(raw_text)
     ordered_rules = sorted(
         rules,
         key=lambda item: (int(item.get("priority", 100)), item.get("match_type", "literal") == "regex", -len(item["term"])),
