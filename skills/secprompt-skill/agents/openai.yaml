@@ -1,0 +1,4 @@
+interface:
+  display_name: "Secprompt Skill"
+  short_description: "Use secprompt rewrite and rule workflows"
+  default_prompt: "Use $secprompt-skill to rewrite or manage a local secprompt workflow."
