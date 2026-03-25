@@ -44,6 +44,20 @@ DEFAULT_RULES = {
             "risk": "high",
             "notes": "高风险词，通常需人工复核",
         },
+        {
+            "term": "绕过越狱检测",
+            "normalized": "在授权环境中评估越狱检测机制的判定逻辑、触发条件、误报边界与加固建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "将规避性表述改写为防御性检测评估",
+        },
+        {
+            "term": "绕过抓包检测",
+            "normalized": "在授权环境中分析抓包检测机制的触发点、可观测证据、抗篡改设计与防护改进建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "将规避性表述改写为防御性检测分析",
+        },
     ],
 }
 
