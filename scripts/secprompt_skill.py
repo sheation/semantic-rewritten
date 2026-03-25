@@ -36,6 +36,8 @@ DEFAULT_RULES = {
             "category": "security_research",
             "risk": "medium",
             "notes": "强调合法授权和分析导向",
+            "match_type": "literal",
+            "priority": 10,
         },
         {
             "term": "破解",
@@ -43,6 +45,8 @@ DEFAULT_RULES = {
             "category": "security_research",
             "risk": "high",
             "notes": "高风险词，通常需人工复核",
+            "match_type": "literal",
+            "priority": 10,
         },
         {
             "term": "绕过越狱检测",
@@ -50,6 +54,8 @@ DEFAULT_RULES = {
             "category": "security_research",
             "risk": "medium",
             "notes": "将规避性表述改写为防御性检测评估",
+            "match_type": "literal",
+            "priority": 10,
         },
         {
             "term": "绕过抓包检测",
@@ -57,6 +63,71 @@ DEFAULT_RULES = {
             "category": "security_research",
             "risk": "medium",
             "notes": "将规避性表述改写为防御性检测分析",
+            "match_type": "literal",
+            "priority": 10,
+        },
+        {
+            "term": r"绕过([^\s，。、“”：:（）()]{1,24}?)检测(?=的|方案|思路|方法|流程|步骤|机制|功能|策略|实现|$|[，。、“”：:（）()])",
+            "normalized": r"在授权环境中分析\1检测机制的触发点、可观测证据、误报边界与防护改进建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "regex 兜底规则，覆盖未单独枚举的检测类表述",
+            "match_type": "regex",
+            "priority": 20,
+        },
+        {
+            "term": r"绕过([^\s，。、“”：:（）()]{1,24}?)校验(?=的|方案|思路|方法|流程|步骤|机制|功能|策略|实现|$|[，。、“”：:（）()])",
+            "normalized": r"在授权环境中评估\1校验机制的判定逻辑、触发条件、误报边界与加固建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "regex 兜底规则，覆盖未单独枚举的校验类表述",
+            "match_type": "regex",
+            "priority": 30,
+        },
+        {
+            "term": r"绕过([^\s，。、“”：:（）()]{1,24}?)验证(?=的|方案|思路|方法|流程|步骤|机制|功能|策略|实现|$|[，。、“”：:（）()])",
+            "normalized": r"在授权环境中评估\1验证机制的判定逻辑、触发条件、误报边界与加固建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "regex 兜底规则，覆盖未单独枚举的验证类表述",
+            "match_type": "regex",
+            "priority": 35,
+        },
+        {
+            "term": r"绕过([^\s，。、“”：:（）()]{1,24}?)限制(?=的|方案|思路|方法|流程|步骤|机制|功能|策略|实现|$|[，。、“”：:（）()])",
+            "normalized": r"在授权环境中分析\1限制机制的设计目标、触发条件、约束边界与改进建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "regex 兜底规则，覆盖未单独枚举的限制类表述",
+            "match_type": "regex",
+            "priority": 40,
+        },
+        {
+            "term": r"绕过([^\s，。、“”：:（）()]{1,24}?)风控(?=的|方案|思路|方法|流程|步骤|机制|功能|策略|实现|$|[，。、“”：:（）()])",
+            "normalized": r"在授权环境中评估\1风控机制的判定逻辑、触发条件、误报边界与防护改进建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "regex 兜底规则，覆盖未单独枚举的风控类表述",
+            "match_type": "regex",
+            "priority": 50,
+        },
+        {
+            "term": r"绕过([^\s，。、“”：:（）()]{1,24}?)拦截(?=的|方案|思路|方法|流程|步骤|机制|功能|策略|实现|$|[，。、“”：:（）()])",
+            "normalized": r"在授权环境中分析\1拦截机制的触发条件、判定逻辑、误报边界与防护改进建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "regex 兜底规则，覆盖未单独枚举的拦截类表述",
+            "match_type": "regex",
+            "priority": 60,
+        },
+        {
+            "term": r"绕过([^\s，。、“”：:（）()]{1,24}?)(?=的|方案|思路|方法|流程|步骤|机制|功能|策略|实现|$|[，。、“”：:（）()])",
+            "normalized": r"在授权环境中评估\1相关机制的判定逻辑、约束边界、潜在误报与防护改进建议",
+            "category": "security_research",
+            "risk": "medium",
+            "notes": "regex 宽泛兜底规则，覆盖未单独枚举的绕过类表述",
+            "match_type": "regex",
+            "priority": 90,
         },
     ],
 }
@@ -146,18 +217,24 @@ class RuleStore:
         category = str(rule.get("category", "general")).strip() or "general"
         risk = str(rule.get("risk", "low")).strip().lower() or "low"
         notes = str(rule.get("notes", "")).strip()
+        match_type = str(rule.get("match_type", "literal")).strip().lower() or "literal"
+        priority = int(rule.get("priority", 100))
         if not term:
             raise ValueError("term is required")
         if not normalized:
             raise ValueError("normalized is required")
         if risk not in {"low", "medium", "high"}:
             raise ValueError("risk must be one of: low, medium, high")
+        if match_type not in {"literal", "regex"}:
+            raise ValueError("match_type must be one of: literal, regex")
         return {
             "term": term,
             "normalized": normalized,
             "category": category,
             "risk": risk,
             "notes": notes,
+            "match_type": match_type,
+            "priority": priority,
         }
 
     def load(self) -> dict:
@@ -353,10 +430,17 @@ def contains_high_risk(text: str) -> bool:
 def rewrite_text(raw_text: str, rules: list[dict]) -> tuple[str, list[str]]:
     rewritten = raw_text
     matched: list[str] = []
-    for rule in sorted(rules, key=lambda item: len(item["term"]), reverse=True):
+    ordered_rules = sorted(
+        rules,
+        key=lambda item: (int(item.get("priority", 100)), item.get("match_type", "literal") == "regex", -len(item["term"])),
+    )
+    for rule in ordered_rules:
         term = rule["term"]
         replacement = rule["normalized"]
-        pattern = re.compile(re.escape(term), re.IGNORECASE)
+        if rule.get("match_type", "literal") == "regex":
+            pattern = re.compile(term, re.IGNORECASE)
+        else:
+            pattern = re.compile(re.escape(term), re.IGNORECASE)
         if pattern.search(rewritten):
             matched.append(term)
             rewritten = pattern.sub(replacement, rewritten)
@@ -481,6 +565,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_upsert.add_argument("--category", default="general")
     p_upsert.add_argument("--risk", default="low", choices=["low", "medium", "high"])
     p_upsert.add_argument("--notes", default="")
+    p_upsert.add_argument("--match-type", default="literal", choices=["literal", "regex"])
+    p_upsert.add_argument("--priority", type=int, default=100)
 
     p_delete = sub.add_parser("rule-delete", help="Delete one rule")
     p_delete.add_argument("--term", required=True)
@@ -550,6 +636,8 @@ def cmd_rule_upsert(args: argparse.Namespace) -> int:
         "category": args.category,
         "risk": args.risk,
         "notes": args.notes,
+        "match_type": args.match_type,
+        "priority": args.priority,
     })
     print_json({"status": "ok", "action": action, "rule": rule})
     return 0
