@@ -1,2 +1,0 @@
-"""mcp_pro package."""
-
